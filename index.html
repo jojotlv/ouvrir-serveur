@@ -1,0 +1,65 @@
+<!doctype html>
+<!--
+  Page d'attente du lien des messages « Blocages » (2026-11-26), publiée sur GitHub Pages (dépôt jojotlv/ouvrir-serveur).
+  Joignable sans Tailscale : elle tente de joindre le serveur toutes les secondes, ce qui fait connecter Tailscale
+  (VPN On Demand sur *.ts.net), puis ouvre la page /rustdesk de l'interface, qui lance l'app RustDesk.
+  Elle ne contient que l'adresse Tailscale du serveur, inutilisable sans le compte Tailscale.
+-->
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Ouverture du serveur</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f2f2f7; --card: #fff; --text: #000; --muted: #6e6e73; --tint: #007aff; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #000; --card: #1c1c1e; --text: #fff; --muted: #98989d; --tint: #0a84ff; } }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); color: var(--text);
+         font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+  main { width: min(100% - 32px, 420px); text-align: center; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  p { color: var(--muted); margin: 0 0 24px; }
+  .spinner { width: 28px; height: 28px; margin: 0 auto 20px; border: 3px solid var(--muted); border-top-color: var(--tint);
+             border-radius: 50%; animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+  a.button { display: block; padding: 14px; border-radius: 12px; background: var(--tint); color: #fff; font-weight: 600;
+             text-decoration: none; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <div class="spinner" id="spinner"></div>
+  <h1 id="title">Connexion à Tailscale…</h1>
+  <p id="text">RustDesk s'ouvrira dès que le serveur répond.</p>
+  <a class="button hidden" id="button" href="https://hermesbot.tail4da662.ts.net/rustdesk">Ouvrir RustDesk</a>
+</main>
+<script>
+  const SERVER = "https://hermesbot.tail4da662.ts.net";
+  const NEXT = SERVER + "/rustdesk";
+  const GIVE_UP_MS = 30000;
+  const started = Date.now();
+
+  function giveUp() {
+    document.getElementById("spinner").classList.add("hidden");
+    document.getElementById("title").textContent = "Le serveur ne répond pas";
+    document.getElementById("text").textContent = "Ouvre l'app Tailscale, vérifie qu'elle est connectée, puis touche le bouton.";
+    document.getElementById("button").classList.remove("hidden");
+  }
+
+  // Une requête « no-cors » aboutit (réponse opaque) dès que le serveur est joignable, et échoue tant que Tailscale
+  // n'est pas connecté. La première tentative est celle qui déclenche la connexion de Tailscale.
+  async function tryServer() {
+    try {
+      await fetch(SERVER + "/style.css?t=" + Date.now(), { mode: "no-cors", cache: "no-store" });
+      location.replace(NEXT);
+    } catch (error) {
+      if (Date.now() - started > GIVE_UP_MS) return giveUp();
+      setTimeout(tryServer, 1000);
+    }
+  }
+  tryServer();
+</script>
+</body>
+</html>
